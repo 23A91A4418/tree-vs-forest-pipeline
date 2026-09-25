@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Pipeline: Decision Tree vs. Random Forest Bake-Off</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+    <!-- Top Bar Navigation -->
+    <header class="navbar">
+        <div class="logo-container">
+            <span class="logo-icon">⚡</span>
+            <div>
+                <h1>ML Bake-Off Engine</h1>
+                <p class="subtitle">Decision Tree vs. Random Forest &bull; MLflow & FastAPI</p>
+            </div>
+        </div>
+
+        <div class="champion-badge" id="championBadge">
+            <span class="badge-label">CURRENT CHAMPION</span>
+            <span class="badge-value" id="championName">Loading...</span>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Tab Navigation Bar -->
+        <nav class="tabs-nav">
+            <button class="tab-btn active" onclick="switchTab('comparisonTab')">📊 Prediction Lab</button>
+            <button class="tab-btn" onclick="switchTab('leaderboardTab')">🏆 Bake-Off Leaderboard</button>
+            <button class="tab-btn" onclick="switchTab('batchTab')">⚡ Batch Simulator</button>
+            <button class="tab-btn" onclick="switchTab('galleryTab')">🖼️ Visual Artifacts</button>
+            <button class="tab-btn" onclick="switchTab('docsTab')">📖 Architecture & Theory</button>
+        </nav>
+
+        <!-- TAB 1: Prediction Lab -->
+        <section id="comparisonTab" class="tab-content active">
+            <div class="grid-2col">
+                <!-- Customer Features Input Form -->
+                <div class="card glass">
+                    <div class="card-header">
+                        <h2>👤 Customer Profile Inputs</h2>
+                        <button class="btn btn-secondary btn-sm" onclick="loadSampleData()">🎲 Fill Sample Data</button>
+                    </div>
+                    <form id="predictForm" onsubmit="handlePredictSubmit(event)">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="age">Age (years)</label>
+                                <input type="number" id="age" value="45" min="18" max="100" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="annual_income">Annual Income ($)</label>
+                                <input type="number" id="annual_income" value="65000" min="0" step="1000" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="credit_score">Credit Score</label>
+                                <input type="number" id="credit_score" value="680" min="300" max="850" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="tenure_months">Tenure (Months)</label>
+                                <input type="number" id="tenure_months" value="18" min="1" max="120" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="account_balance">Account Balance ($)</label>
+                                <input type="number" id="account_balance" value="12500" min="0" step="500" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="monthly_usage_hours">Monthly Usage (Hours)</label>
+                                <input type="number" id="monthly_usage_hours" value="45.5" min="0" step="0.1" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="support_tickets">Support Tickets</label>
+                                <input type="number" id="support_tickets" value="4" min="0" max="20" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="contract_type">Contract Type</label>
+                                <select id="contract_type" required>
+                                    <option value="Month-to-Month">Month-to-Month</option>
+                                    <option value="One-Year">One-Year</option>
+                                    <option value="Two-Year">Two-Year</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="payment_method">Payment Method</label>
+                                <select id="payment_method" required>
+                                    <option value="Electronic Check">Electronic Check</option>
+                                    <option value="Credit Card">Credit Card</option>
+                                    <option value="Bank Transfer">Bank Transfer</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="device_category">Primary Device</label>
+                                <select id="device_category" required>
+                                    <option value="Mobile">Mobile</option>
+                                    <option value="Desktop">Desktop</option>
+                                    <option value="Tablet">Tablet</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-full mt-4">⚡ Run Side-by-Side
+                            Inference</button>
+                    </form>
+                </div>
+
+                <!-- Prediction Comparison Output -->
+                <div class="card glass">
+                    <div class="card-header">
+                        <h2>📊 Model Verdict Comparison</h2>
+                    </div>
+
+                    <div id="predictionPlaceholder" class="placeholder-box">
+                        <span class="placeholder-icon">🔮</span>
+                        <p>Fill in customer parameters on the left and submit to run real-time inference on Decision
+                            Tree vs. Random Forest.</p>
+                    </div>
+
+                    <div id="predictionResults" class="hidden">
+                        <!-- Model Agreement Banner -->
+                        <div id="agreementBanner" class="agreement-banner"></div>
+
+                        <!-- Side by Side Model Cards -->
+                        <div class="models-comparison-grid">
+                            <!-- Decision Tree Output -->
+                            <div class="model-result-card dt-card">
+                                <h3>Decision Tree</h3>
+                                <div class="prediction-badge" id="dtPredBadge">--</div>
+                                <div class="prob-container">
+                                    <div class="prob-header">
+                                        <span>Churn Risk Probability</span>
+                                        <strong id="dtProbVal">0%</strong>
+                                    </div>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill dt-fill" id="dtProbFill"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Random Forest Output -->
+                            <div class="model-result-card rf-card">
+                                <h3>Random Forest</h3>
+                                <div class="prediction-badge" id="rfPredBadge">--</div>
+                                <div class="prob-container">
+                                    <div class="prob-header">
+                                        <span>Churn Risk Probability</span>
+                                        <strong id="rfProbVal">0%</strong>
+                                    </div>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill rf-fill" id="rfProbFill"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Champion Verdict Summary -->
+                        <div class="champion-decision-box">
+                            <h4>🏆 Champion Model Decision</h4>
+                            <p id="champDecisionText">Select parameters to evaluate model output.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: Leaderboard -->
+        <section id="leaderboardTab" class="tab-content">
+            <div class="card glass">
+                <div class="card-header">
+                    <div>
+                        <h2>🏆 Model Performance Bake-Off Leaderboard</h2>
+                        <p class="subtitle">Evaluated on out-of-sample holdout test dataset</p>
+                    </div>
+                    <button class="btn btn-primary" id="runBakeoffBtn" onclick="triggerBakeoff()">⚡ Run ML
+                        Bake-Off</button>
+                </div>
+
+                <div class="bakeoff-summary-grid">
+                    <div class="stat-box">
+                        <span class="stat-title">Winning Model</span>
+                        <span class="stat-value text-gold" id="winnerNameDisplay">Random Forest</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-title">Selection Metric</span>
+                        <span class="stat-value" id="primaryMetricName">F1_SCORE</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-title">Decision Tree F1</span>
+                        <span class="stat-value" id="dtF1">0.000</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-title">Random Forest F1</span>
+                        <span class="stat-value text-success" id="rfF1">0.000</span>
+                    </div>
+                </div>
+
+                <table class="leaderboard-table mt-4">
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th>Decision Tree</th>
+                            <th>Random Forest</th>
+                            <th>Delta (RF vs DT)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboardTableBody">
+                        <!-- Dynamic rows populated by JS -->
+                    </tbody>
+                </table>
+
+                <div class="grid-2col mt-4">
+                    <div class="code-box">
+                        <h4>Decision Tree Best Parameters</h4>
+                        <pre id="dtParamsJson">Loading...</pre>
+                    </div>
+                    <div class="code-box">
+                        <h4>Random Forest Best Parameters</h4>
+                        <pre id="rfParamsJson">Loading...</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: Batch Simulator -->
+        <section id="batchTab" class="tab-content">
+            <div class="card glass">
+                <div class="card-header">
+                    <div>
+                        <h2>⚡ High-Throughput Batch Simulator</h2>
+                        <p class="subtitle">Simulate real-time scoring of multiple customer accounts simultaneously</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="runSampleBatch()">🚀 Score 10 Random Accounts</button>
+                </div>
+
+                <div id="batchStats" class="batch-stats-bar hidden">
+                    <span>Total Scored: <strong id="batchTotal">0</strong></span>
+                    <span>Predicted Churn: <strong id="batchChurn" class="text-danger">0</strong></span>
+                    <span>Predicted Retained: <strong id="batchRetain" class="text-success">0</strong></span>
+                    <span>Churn Rate: <strong id="batchRate">0%</strong></span>
+                </div>
+
+                <table class="leaderboard-table mt-3">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Age</th>
+                            <th>Income</th>
+                            <th>Tenure</th>
+                            <th>Tickets</th>
+                            <th>Contract</th>
+                            <th>Churn Prob</th>
+                            <th>Verdict</th>
+                        </tr>
+                    </thead>
+                    <tbody id="batchTableBody">
+                        <tr>
+                            <td colspan="8" class="text-center">Click "Score 10 Random Accounts" to run batch inference.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- TAB 4: Gallery -->
+        <section id="galleryTab" class="tab-content">
+            <div class="card glass">
+                <h2>🖼️ MLflow Artifact Visualizations</h2>
+                <p class="subtitle mb-4">Saved visual diagnostic plots generated during model training & evaluation</p>
+
+                <div class="gallery-grid">
+                    <div class="gallery-card">
+                        <h3>ROC Curve Comparison</h3>
+                        <img src="/plots/roc_curve_comparison.png" alt="ROC Curve"
+                            onerror="this.src='/static/placeholder.png'">
+                    </div>
+                    <div class="gallery-card">
+                        <h3>Confusion Matrices</h3>
+                        <img src="/plots/confusion_matrix_comparison.png" alt="Confusion Matrix"
+                            onerror="this.src='/static/placeholder.png'">
+                    </div>
+                    <div class="gallery-card">
+                        <h3>Feature Importance Comparison</h3>
+                        <img src="/plots/feature_importance_comparison.png" alt="Feature Importance"
+                            onerror="this.src='/static/placeholder.png'">
+                    </div>
+                    <div class="gallery-card">
+                        <h3>Decision Tree Node Structure</h3>
+                        <img src="/plots/decision_tree_structure.png" alt="Decision Tree Structure"
+                            onerror="this.src='/static/placeholder.png'">
+                    </div>
+                    <div class="gallery-card full-width">
+                        <h3>Decision Tree Overfitting Analysis (Depth vs F1 Score)</h3>
+                        <img src="/plots/depth_overfitting_analysis.png" alt="Depth Overfitting Curve"
+                            onerror="this.src='/static/placeholder.png'">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: Docs -->
+        <section id="docsTab" class="tab-content">
+            <div class="card glass">
+                <h2>📖 Architecture & Machine Learning Theory</h2>
+                <div class="docs-body">
+                    <h3>1. Single Decision Tree vs. Random Forest Ensemble</h3>
+                    <p>
+                        A <strong>Decision Tree</strong> partitions feature space using axis-aligned orthogonal cuts to
+                        maximize Information Gain (Gini Impurity reduction or Entropy).
+                        While Decision Trees are highly interpretable and capture non-linear relationships without
+                        scaling, deep trees suffer from <strong>high variance and overfitting</strong>.
+                    </p>
+                    <p>
+                        A <strong>Random Forest</strong> mitigates overfitting by combining hundreds of decorrelated
+                        Decision Trees via <strong>Bootstrap Aggregation (Bagging)</strong> and <strong>Random Subspace
+                            Method (feature bagging)</strong>. By averaging individual tree variance, Random Forests
+                        reduce total generalization error without increasing bias.
+                    </p>
+
+                    <h3>2. Preprocessing & Feature Engineering</h3>
+                    <ul>
+                        <li><strong>Numerical Features</strong> (Age, Income, Credit Score, Tenure, Balance, Usage,
+                            Support Tickets): Standardized using <code>StandardScaler</code> ($\mu=0, \sigma=1$).</li>
+                        <li><strong>Categorical Features</strong> (Contract Type, Payment Method, Device Category):
+                            Encoded using <code>OneHotEncoder</code> to eliminate arbitrary ordinal assumptions.</li>
+                    </ul>
+
+                    <h3>3. Automated Model Selection Rule</h3>
+                    <p>
+                        The champion model is selected dynamically based on out-of-sample holdout test performance on
+                        the primary metric (F1 Score). The champion model binary is exported as
+                        <code>champion_model.joblib</code> for zero-latency REST serving.
+                    </p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="/static/js/app.js"></script>
+</body>
+
+</html>

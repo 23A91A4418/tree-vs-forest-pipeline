@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  mlflow_server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mlflow_tracking_server
+    command: mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root /app/mlruns --host 0.0.0.0 --port 5000
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlruns:/app/mlruns
+      - ./mlflow.db:/app/mlflow.db
+    restart: unless-stopped
+
+  pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ml_pipeline_training
+    command: python -m src.pipeline
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow_server:5000
+      - EVAL_METRIC=f1_score
+    volumes:
+      - ./data:/app/data
+      - ./artifacts:/app/artifacts
+      - ./plots:/app/plots
+      - ./results:/app/results
+      - ./mlruns:/app/mlruns
+    depends_on:
+      - mlflow_server
+    restart: "no"
+
+  api_server:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: ml_pipeline_fastapi
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./artifacts:/app/artifacts
+      - ./plots:/app/plots
+      - ./results:/app/results
+      - ./mlruns:/app/mlruns
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow_server:5000
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+    depends_on:
+      - mlflow_server
+      - pipeline
+    restart: unless-stopped
