@@ -19,6 +19,14 @@ htmlcov/
 mlruns/
 mlflow.db
 
+# Generated Data, Artifacts, Models & Plots
+data/
+results/
+artifacts/
+plots/
+*.joblib
+*.png
+
 # IDE / OS generated files
 .vscode/
 .idea/
